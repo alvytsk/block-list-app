@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  db:
+    container_name: db
+    image: postgres:16.1-alpine3.19
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    networks:
+      - blocklist-network
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  server:
+    container_name: server
+    image: blocklist-server
+    build:
+      target: development # development or production
+      context: ./server
+      dockerfile: ./Dockerfile
+    entrypoint: ["npm", "run", "start:dev"]
+    env_file:
+      - ./server/.env
+    ports: 
+      - '3001:3001'
+    networks:
+      - blocklist-network
+    depends_on:
+      - db
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
+
+volumes:
+  db:
+  
+networks:
+  blocklist-network:
+    driver: bridge
